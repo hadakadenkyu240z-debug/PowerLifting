@@ -65,6 +65,19 @@
   }
   .tab.active{ background: var(--chalk); color: #15161a; border-color: var(--chalk); }
 
+  .mode-switch{
+    display:flex; gap:0; margin-top: 10px;
+    border: 1px solid var(--line); border-radius: 9px; overflow:hidden;
+  }
+  .mode-btn{
+    flex:1; text-align:center; padding: 8px 6px;
+    background: var(--panel); color: var(--chalk-dim);
+    font-size: 12px; font-weight: 800; letter-spacing: 0.02em;
+    border: none; border-right: 1px solid var(--line);
+  }
+  .mode-btn:last-child{ border-right: none; }
+  .mode-btn.active{ background: var(--brass); color: #15161a; }
+
   main{ padding: 12px; max-width: 720px; margin: 0 auto; }
   .view{ display:none; }
   .view.active{ display:block; animation: fadein .15s ease-out; }
@@ -290,7 +303,8 @@
 <div id="app-shell">
 <div class="topbar">
   <h1>POWERLIFTING SECOND LAB</h1>
-  <div class="sub">SUBTOTAL &amp; TOTAL TRACKER — 同一階級内比較</div>
+  <div class="sub" id="sub-label">SUBTOTAL &amp; TOTAL TRACKER — 同一階級内比較</div>
+  <div class="mode-switch" id="mode-switch"></div>
   <div class="tabs" id="tabs"></div>
 </div>
 
@@ -322,6 +336,7 @@
   // ---------- state ----------
   var state = {
     tab: "roster",
+    mode: "pl", // "pl" = パワーリフティング(3種目) / "bench" = ベンチプレスのみ
     athletes: []
   };
   var uidCounter = 1;
@@ -421,14 +436,19 @@
   }
 
   // ---------- rendering ----------
-  var TABS = [
-    { id: "roster", label: "選手・SQ/BP" },
-    { id: "deadlift", label: "デッドリフト" },
-    { id: "ranking", label: "順位表" },
-    { id: "target", label: "ターゲット" }
-  ];
+  function isBench(){ return state.mode === "bench"; }
+
+  function getTabs(){
+    return [
+      { id: "roster", label: isBench() ? "選手" : "選手・SQ/BP" },
+      { id: "deadlift", label: isBench() ? "ベンチプレス" : "デッドリフト" },
+      { id: "ranking", label: "順位表" },
+      { id: "target", label: "ターゲット" }
+    ];
+  }
 
   function render(){
+    renderModeSwitch();
     renderTabs();
     var main = document.getElementById("main");
     main.innerHTML = "";
@@ -439,12 +459,42 @@
     if (state.tab === "ranking") view.appendChild(renderRanking());
     if (state.tab === "target") view.appendChild(renderTarget());
     main.appendChild(view);
+
+    var subLabel = document.getElementById("sub-label");
+    if (subLabel){
+      subLabel.innerHTML = isBench()
+        ? "BENCH PRESS ONLY TRACKER — 同一階級内比較"
+        : "SUBTOTAL &amp; TOTAL TRACKER — 同一階級内比較";
+    }
+  }
+
+  function renderModeSwitch(){
+    var box = document.getElementById("mode-switch");
+    if (!box) return;
+    box.innerHTML = "";
+    var modes = [
+      { key: "pl", label: "パワーリフティング(SQ/BP/DL)" },
+      { key: "bench", label: "ベンチプレスのみ" }
+    ];
+    modes.forEach(function(m){
+      var b = document.createElement("button");
+      b.className = "mode-btn" + (state.mode === m.key ? " active" : "");
+      b.textContent = m.label;
+      b.onclick = function(){
+        if (state.mode !== m.key){
+          state.mode = m.key;
+          state.tab = "roster";
+          render();
+        }
+      };
+      box.appendChild(b);
+    });
   }
 
   function renderTabs(){
     var tabs = document.getElementById("tabs");
     tabs.innerHTML = "";
-    TABS.forEach(function(t){
+    getTabs().forEach(function(t){
       var b = document.createElement("button");
       b.className = "tab" + (state.tab === t.id ? " active" : "");
       b.textContent = t.label;
@@ -480,7 +530,7 @@
     addCard.appendChild(addBtn);
     wrap.appendChild(addCard);
 
-    wrap.appendChild(el("div", "eyebrow", "選手一覧・体重・SQ/BP成功重量"));
+    wrap.appendChild(el("div", "eyebrow", isBench() ? "選手一覧・体重" : "選手一覧・体重・SQ/BP成功重量"));
 
     if (state.athletes.length === 0){
       wrap.appendChild(el("div", "empty", "まだ選手が登録されていません。<br>上のフォームから追加してください。"));
@@ -519,19 +569,25 @@
       head.appendChild(delBtn);
       card.appendChild(head);
 
-      var grid = el("div", "grid3");
-      grid.appendChild(makeNumField("体重(kg)", a.bodyweight, function(v){ a.bodyweight = v; }));
-      grid.appendChild(makeNumField("スクワット", a.squat, function(v){ a.squat = v; }));
-      grid.appendChild(makeNumField("ベンチプレス", a.bench, function(v){ a.bench = v; }));
-      card.appendChild(grid);
+      if (isBench()){
+        card.appendChild(makeNumField("体重(kg)", a.bodyweight, function(v){ a.bodyweight = v; }));
+      } else {
+        var grid = el("div", "grid3");
+        grid.appendChild(makeNumField("体重(kg)", a.bodyweight, function(v){ a.bodyweight = v; }));
+        grid.appendChild(makeNumField("スクワット", a.squat, function(v){ a.squat = v; }));
+        grid.appendChild(makeNumField("ベンチプレス", a.bench, function(v){ a.bench = v; }));
+        card.appendChild(grid);
+      }
 
       var outWrap = el("div", "grid2");
       outWrap.style.marginTop = "8px";
-      var st = el("div", "stat-out");
-      st.innerHTML = '<div class="num">' + fmt(subtotal(a)) + ' <span style="font-size:11px;color:var(--chalk-dim)">kg</span></div><div class="lbl">サブトータル(SQ+BP)</div>';
-      outWrap.appendChild(st);
+      if (!isBench()){
+        var st = el("div", "stat-out");
+        st.innerHTML = '<div class="num">' + fmt(subtotal(a)) + ' <span style="font-size:11px;color:var(--chalk-dim)">kg</span></div><div class="lbl">サブトータル(SQ+BP)</div>';
+        outWrap.appendChild(st);
+      }
       var st2 = el("div", "stat-out");
-      st2.innerHTML = '<div class="num">' + fmt(total(a)) + ' <span style="font-size:11px;color:var(--chalk-dim)">kg</span></div><div class="lbl">現在のトータル(+DL自己ベスト)</div>';
+      st2.innerHTML = '<div class="num">' + fmt(total(a)) + ' <span style="font-size:11px;color:var(--chalk-dim)">kg</span></div><div class="lbl">' + (isBench() ? "ベンチプレス自己ベスト" : "現在のトータル(+DL自己ベスト)") + '</div>';
       outWrap.appendChild(st2);
       card.appendChild(outWrap);
 
@@ -557,13 +613,13 @@
     return f;
   }
 
-  // ---- deadlift view ----
+  // ---- deadlift / bench view ----
   function renderDeadlift(){
     var wrap = el("div");
     wrap.appendChild(el("div", "hint", "各試技の重量を入力し、判定ライトをタップして 未定 → GOOD(白) → NO LIFT(赤) を切り替えます。"));
 
     if (state.athletes.length === 0){
-      wrap.appendChild(el("div", "empty", "「選手・SQ/BP」タブで選手を登録してください。"));
+      wrap.appendChild(el("div", "empty", isBench() ? "「選手」タブで選手を登録してください。" : "「選手・SQ/BP」タブで選手を登録してください。"));
       return wrap;
     }
 
@@ -574,9 +630,11 @@
       nm.style.fontWeight = "800"; nm.style.fontSize = "15px"; nm.style.flex = "1";
       head.appendChild(nm);
       if (a.main) head.appendChild(el("span", "main-tag", "担当"));
-      var sub = el("span", null, "SUB " + fmt(subtotal(a)) + "kg");
-      sub.style.cssText = "font-family:var(--font-mono);font-size:12px;color:var(--chalk-dim);";
-      head.appendChild(sub);
+      if (!isBench()){
+        var sub = el("span", null, "SUB " + fmt(subtotal(a)) + "kg");
+        sub.style.cssText = "font-family:var(--font-mono);font-size:12px;color:var(--chalk-dim);";
+        head.appendChild(sub);
+      }
       card.appendChild(head);
 
       a.deadlift.forEach(function(d, idx){
@@ -623,7 +681,7 @@
       var outWrap = el("div", "grid2");
       outWrap.style.marginTop = "6px";
       var st = el("div", "stat-out");
-      st.innerHTML = '<div class="num">' + fmt(bestDeadlift(a)) + ' kg</div><div class="lbl">DL成功ベスト</div>';
+      st.innerHTML = '<div class="num">' + fmt(bestDeadlift(a)) + ' kg</div><div class="lbl">' + (isBench() ? "成功ベスト" : "DL成功ベスト") + '</div>';
       outWrap.appendChild(st);
       var st2 = el("div", "stat-out");
       st2.innerHTML = '<div class="num">' + fmt(total(a)) + ' kg</div><div class="lbl">現在のトータル</div>';
@@ -649,14 +707,16 @@
       wrap.appendChild(el("div", "hint", "「逆転に必要な差」は体重差ルールを考慮した数値です。プラスは既にリードしている差分、マイナスは次の申請で上回るために必要な追加重量(2.5kg刻み)です。"));
     }
 
-    wrap.appendChild(el("div", "eyebrow", "現在のトータル暫定順位(SUB+DL成功ベスト)"));
+    wrap.appendChild(el("div", "eyebrow", isBench() ? "ベンチプレス暫定順位" : "現在のトータル暫定順位(SUB+DL成功ベスト)"));
     wrap.appendChild(buildRankTable(rank(state.athletes, total), main, total));
 
-    wrap.appendChild(el("div", "eyebrow", "サブトータル暫定順位(SQ+BP)"));
-    wrap.appendChild(buildRankTable(rank(state.athletes, subtotal), main, subtotal));
+    if (!isBench()){
+      wrap.appendChild(el("div", "eyebrow", "サブトータル暫定順位(SQ+BP)"));
+      wrap.appendChild(buildRankTable(rank(state.athletes, subtotal), main, subtotal));
+    }
 
     if (!main){
-      var note = el("div", "hint", "「選手・SQ/BP」タブで ★ を押して担当選手を設定すると、体重差・重量差が表示されます。");
+      var note = el("div", "hint", (isBench() ? "「選手」タブ" : "「選手・SQ/BP」タブ") + "で ★ を押して担当選手を設定すると、体重差・重量差が表示されます。");
       wrap.insertBefore(note, wrap.firstChild);
     }
     return wrap;
@@ -717,7 +777,7 @@
       return wrap;
     }
     if (!main){
-      wrap.appendChild(el("div", "empty", "「選手・SQ/BP」タブで ★ を押し、担当選手(メイン)を設定してください。"));
+      wrap.appendChild(el("div", "empty", (isBench() ? "「選手」タブ" : "「選手・SQ/BP」タブ") + "で ★ を押し、担当選手(メイン)を設定してください。"));
       return wrap;
     }
 
@@ -736,11 +796,11 @@
     var headCard = el("div", "card");
     headCard.innerHTML =
       '<div style="font-size:13px;color:var(--chalk-dim);">担当: <b style="color:var(--chalk)">' + escapeHtml(main.name||"(無名)") + '</b>　' +
-      'サブトータル <b style="font-family:var(--font-mono)">' + fmt(mainSub) + 'kg</b>　' +
+      (isBench() ? '' : 'サブトータル <b style="font-family:var(--font-mono)">' + fmt(mainSub) + 'kg</b>　') +
       '現トータル <b style="font-family:var(--font-mono)">' + fmt(total(main)) + 'kg</b></div>';
     wrap.appendChild(headCard);
 
-    wrap.appendChild(el("div", "eyebrow", "各選手に勝つために必要なデッドリフト重量"));
+    wrap.appendChild(el("div", "eyebrow", isBench() ? "各選手に勝つために必要なベンチプレス重量" : "各選手に勝つために必要なデッドリフト重量"));
 
     others.forEach(function(opp){
       var oppTotal = total(opp);
@@ -792,9 +852,9 @@
       if (alreadyAhead && mainCurrentTotal > 0){
         board.innerHTML = '<div class="need-num" style="color:#8fbf6d;">達成済</div><div class="need-lbl">現時点で上回っています</div>';
       } else if (roundedDL <= 0){
-        board.innerHTML = '<div class="need-num" style="color:#8fbf6d;">0</div><div class="need-lbl">SQ+BPだけで既に上回り</div>';
+        board.innerHTML = '<div class="need-num" style="color:#8fbf6d;">0</div><div class="need-lbl">' + (isBench() ? "既に上回っています" : "SQ+BPだけで既に上回り") + '</div>';
       } else {
-        board.innerHTML = '<div class="need-num">' + fmt(roundedDL) + '<span style="font-size:16px;"> kg</span></div><div class="need-lbl">デッドリフトで必要な重量</div>';
+        board.innerHTML = '<div class="need-num">' + fmt(roundedDL) + '<span style="font-size:16px;"> kg</span></div><div class="need-lbl">' + (isBench() ? "ベンチプレスで必要な重量" : "デッドリフトで必要な重量") + '</div>';
       }
       card.appendChild(board);
 
