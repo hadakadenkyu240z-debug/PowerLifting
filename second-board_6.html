@@ -1,0 +1,1654 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>POWERLIFTING SECOND LAB</title>
+<style>
+  :root{
+    --bg: #15161a;
+    --panel: #1e2025;
+    --panel-2: #262932;
+    --line: #34373f;
+    --chalk: #f2efe7;
+    --chalk-dim: #a7abb4;
+    --muted: #6b6f78;
+    --brass: #c9a227;
+    --brass-dim: #7a6a2e;
+    --red: #d9432e;
+    --red-dim: #5a2a24;
+    --steel: #4a7ba6;
+    --good-bg: #f2efe7;
+    --good-fg: #15161a;
+    --radius: 10px;
+    --font-display: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "Yu Gothic", sans-serif;
+    --font-mono: ui-monospace, "SF Mono", "Roboto Mono", "Menlo", monospace;
+  }
+  *{ box-sizing: border-box; }
+  html,body{
+    margin:0; padding:0;
+    background: var(--bg);
+    color: var(--chalk);
+    font-family: var(--font-display);
+    -webkit-font-smoothing: antialiased;
+  }
+  body{ padding-bottom: 80px; }
+  ::selection{ background: var(--brass); color:#15161a; }
+
+  .topbar{
+    position: sticky; top:0; z-index:20;
+    background: linear-gradient(180deg, #17181d 0%, #17181dee 85%, transparent);
+    backdrop-filter: blur(6px);
+    padding: 14px 16px 10px;
+    border-bottom: 1px solid var(--line);
+  }
+  .topbar h1{
+    margin:0 0 2px; font-size: 19px; font-weight: 800; letter-spacing: 0.02em;
+  }
+  .topbar .sub{
+    font-size: 11.5px; color: var(--chalk-dim); letter-spacing: 0.04em;
+  }
+  .tabs{
+    display:flex; gap:6px; margin-top:12px; overflow-x:auto; -ms-overflow-style:none; scrollbar-width:none;
+  }
+  .tabs::-webkit-scrollbar{ display:none; }
+  .tab{
+    flex: 0 0 auto;
+    padding: 8px 13px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: var(--panel);
+    color: var(--chalk-dim);
+    font-size: 12.5px; font-weight: 700; letter-spacing: 0.03em;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .tab.active{ background: var(--chalk); color: #15161a; border-color: var(--chalk); }
+
+  .mode-switch{
+    display:flex; gap:0; margin-top: 10px;
+    border: 1px solid var(--line); border-radius: 9px; overflow:hidden;
+  }
+  .mode-btn{
+    flex:1; text-align:center; padding: 8px 6px;
+    background: var(--panel); color: var(--chalk-dim);
+    font-size: 12px; font-weight: 800; letter-spacing: 0.02em;
+    border: none; border-right: 1px solid var(--line);
+  }
+  .mode-btn:last-child{ border-right: none; }
+  .mode-btn.active{ background: var(--brass); color: #15161a; }
+
+  .lang-switch{ display:flex; gap:6px; margin-top:8px; }
+  .lang-btn{
+    padding: 5px 11px; border-radius: 999px; border: 1px solid var(--line);
+    background: var(--panel); color: var(--chalk-dim); font-size: 11px; font-weight: 800;
+  }
+  .lang-btn.active{ background: var(--chalk); color:#15161a; border-color: var(--chalk); }
+
+  /* splash bilingual toggle (CSS-only, no JS required) */
+  .lang-radio{ position:absolute; opacity:0; width:0; height:0; pointer-events:none; }
+  .lang-toggle{ display:flex; justify-content:center; gap:8px; margin-bottom:16px; }
+  .lang-toggle label{
+    font-size: 11px; font-weight: 800; letter-spacing:0.03em; padding:6px 14px;
+    border-radius: 999px; border:1px solid var(--line); color: var(--chalk-dim);
+    background: var(--panel); cursor:pointer;
+  }
+  #splash-lang-ja:checked ~ .lang-toggle label[for="splash-lang-ja"],
+  #splash-lang-en:checked ~ .lang-toggle label[for="splash-lang-en"]{
+    background: var(--brass); color:#15161a; border-color: var(--brass);
+  }
+  .lang-en{ display:none; }
+  #splash-lang-en:checked ~ .lang-en{ display:block; }
+  #splash-lang-en:checked ~ .lang-ja{ display:none; }
+
+  main{ padding: 12px; max-width: 720px; margin: 0 auto; }
+  .view{ display:none; }
+  .view.active{ display:block; animation: fadein .15s ease-out; }
+  @keyframes fadein{ from{opacity:0; transform: translateY(3px);} to{opacity:1; transform:none;} }
+
+  .eyebrow{
+    font-size: 11px; letter-spacing: 0.12em; color: var(--brass); font-weight: 800;
+    text-transform: uppercase; margin: 16px 0 6px;
+  }
+  .eyebrow:first-child{ margin-top: 2px; }
+  .card{
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 11px;
+    margin-bottom: 8px;
+  }
+  .hint{ font-size: 11.5px; color: var(--muted); line-height:1.5; margin: 0 0 10px; }
+
+  /* forms */
+  .row{ display:flex; gap:8px; }
+  .field{ flex:1; min-width:0; }
+  label{ display:block; font-size: 10.5px; color: var(--chalk-dim); margin-bottom: 4px; letter-spacing:0.02em; }
+  input[type=text], input[type=number]{
+    width: 100%;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    color: var(--chalk);
+    border-radius: 8px;
+    padding: 8px 9px;
+    font-size: 15px;
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+  input[type=text]{ font-family: var(--font-display); }
+  input:focus{ outline: 2px solid var(--steel); outline-offset: 1px; }
+  input::placeholder{ color: var(--muted); }
+
+  button{ font-family: inherit; cursor:pointer; }
+  .btn{
+    border: 1px solid var(--line);
+    background: var(--panel-2);
+    color: var(--chalk);
+    border-radius: 8px;
+    padding: 9px 14px;
+    font-size: 13px; font-weight: 700;
+  }
+  .btn:active{ transform: scale(0.98); }
+  .btn-primary{ background: var(--chalk); color:#15161a; border-color: var(--chalk); }
+  .btn-danger{ background: transparent; color: var(--red); border-color: var(--red-dim); }
+  .btn-block{ width:100%; }
+  .btn-ghost{ background: transparent; }
+
+  /* athlete roster */
+  .athlete-card{
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    position: relative;
+  }
+  .athlete-card.is-main{ border-color: var(--brass); box-shadow: inset 0 0 0 1px var(--brass); }
+  .athlete-head{ display:flex; align-items:center; gap:8px; margin-bottom: 8px; }
+  .main-toggle{
+    flex: 0 0 auto;
+    width: 27px; height: 27px; border-radius: 999px;
+    border: 1.5px solid var(--line);
+    background: var(--panel-2);
+    display:flex; align-items:center; justify-content:center;
+    font-size: 12px;
+  }
+  .main-toggle.checked{ background: var(--brass); border-color: var(--brass); color:#15161a; }
+  .athlete-name{
+    flex:1; border:none; background:transparent; color: var(--chalk);
+    font-size: 15.5px; font-weight: 800; padding: 3px 0; font-family: var(--font-display);
+  }
+  .main-tag{
+    font-size: 9.5px; letter-spacing: 0.08em; color: var(--brass); border: 1px solid var(--brass-dim);
+    padding: 2px 6px; border-radius: 999px; font-weight: 800; flex: 0 0 auto;
+  }
+  .del-x{ background:none; border:none; color: var(--muted); font-size: 18px; padding: 2px 4px; flex: 0 0 auto; }
+  .grid3{ display:grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+  .grid2{ display:grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .stat-out{
+    background: var(--panel-2); border-radius: 8px; padding: 7px 8px;
+  }
+  .stat-out .num{ font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 16px; font-weight: 700; }
+  .stat-out .lbl{ font-size: 9.5px; color: var(--chalk-dim); letter-spacing: 0.04em; }
+
+  /* deadlift attempts */
+  .dl-attempt{ display:flex; align-items:center; gap:6px; margin-bottom: 5px; }
+  .dl-attempt .attn{
+    flex: 0 0 16px; font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); text-align:center;
+  }
+  .dl-attempt input{ flex: 1; min-width: 0; padding: 7px 8px; }
+  .dl-prov{
+    flex: 0 0 40px; text-align:center; font-family: var(--font-mono); font-variant-numeric: tabular-nums;
+    font-size: 13px; font-weight: 700; color: var(--brass);
+  }
+  .lights{ display:flex; gap:3px; flex: 0 0 auto; }
+  .light{
+    width: 27px; height: 27px; border-radius: 50%;
+    border: 1.5px solid var(--line);
+    background: var(--panel-2);
+    display:flex; align-items:center; justify-content:center;
+    font-size: 9px; font-weight: 800; color: var(--muted);
+    letter-spacing: -0.02em;
+  }
+  .light.pending{ }
+  .light.good{ background: var(--good-bg); color: var(--good-fg); border-color: var(--good-bg); }
+  .light.nolift{ background: var(--red); color: var(--chalk); border-color: var(--red); }
+
+  /* tables */
+  table{ width:100%; border-collapse: collapse; }
+  th{
+    text-align: left; font-size: 10px; color: var(--chalk-dim); letter-spacing: 0.04em;
+    padding: 5px 6px; border-bottom: 1px solid var(--line); font-weight: 700;
+  }
+  td{
+    padding: 7px 6px; border-bottom: 1px solid var(--line);
+    font-size: 13.5px;
+  }
+  .num-cell{ font-family: var(--font-mono); font-variant-numeric: tabular-nums; text-align: right; }
+  tr.main-row td{ background: rgba(201,162,39,0.09); }
+  tr.main-row td:first-child{ box-shadow: inset 3px 0 0 var(--brass); }
+  .rank-badge{
+    display:inline-flex; align-items:center; justify-content:center;
+    width: 22px; height: 22px; border-radius: 5px;
+    background: var(--panel-2); font-family: var(--font-mono); font-size: 12px; font-weight:700;
+  }
+  .rank-badge.top{ background: var(--brass); color: #15161a; }
+  .diff-pos{ color: #8fbf6d; }
+  .diff-neg{ color: var(--red); }
+  .diff-zero{ color: var(--chalk-dim); }
+
+  /* target board */
+  .target-card{
+    background: var(--panel); border:1px solid var(--line); border-radius: var(--radius);
+    padding: 14px; margin-bottom: 10px;
+  }
+  .target-head{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; }
+  .target-name{ font-size: 14.5px; font-weight: 800; }
+  .target-sub{ font-size: 11px; color: var(--muted); }
+  .target-board{
+    background: #0e0f12; border-radius: 8px; padding: 14px; text-align:center;
+    border: 1px solid var(--line);
+  }
+  .target-board .need-num{
+    font-family: var(--font-mono); font-variant-numeric: tabular-nums;
+    font-size: 34px; font-weight: 800; color: var(--brass); line-height:1;
+  }
+  .target-board .need-lbl{ font-size: 10.5px; color: var(--chalk-dim); letter-spacing: 0.05em; margin-top:4px; }
+  .target-note{ font-size: 11.5px; color: var(--muted); margin-top: 8px; line-height:1.6; }
+
+  .empty{
+    text-align:center; padding: 40px 20px; color: var(--muted); font-size: 13px; line-height: 1.8;
+  }
+
+  /* splash / disclaimer screen */
+  #splash{
+    position: fixed; inset: 0; z-index: 100;
+    background: var(--bg);
+    display:flex; align-items:center; justify-content:center;
+    padding: 24px 20px;
+    overflow-y: auto;
+  }
+  .splash-card{
+    max-width: 440px; width:100%;
+  }
+  .splash-eyebrow{
+    font-size: 11px; letter-spacing: 0.18em; color: var(--brass); font-weight: 800;
+    text-transform: uppercase; margin-bottom: 10px; text-align:center;
+  }
+  .splash-title{
+    font-size: 30px; font-weight: 800; letter-spacing: 0.01em; line-height: 1.15;
+    text-align:center; margin: 0 0 6px;
+  }
+  .splash-title span{ color: var(--brass); }
+  .splash-tagline{
+    text-align:center; font-size: 12.5px; color: var(--chalk-dim); margin-bottom: 22px;
+    letter-spacing: 0.03em;
+  }
+  .splash-panel{
+    background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 16px 16px 18px; margin-bottom: 16px;
+  }
+  .splash-panel h2{
+    font-size: 12px; letter-spacing: 0.05em; color: var(--red); font-weight: 800;
+    margin: 0 0 10px; display:flex; align-items:center; gap:6px;
+  }
+  .splash-panel p{
+    font-size: 12.5px; color: var(--chalk-dim); line-height: 1.75; margin: 0 0 10px;
+  }
+  .splash-panel p:last-child{ margin-bottom: 0; }
+  .splash-panel .contact-line{
+    font-size: 12.5px; color: var(--chalk); background: var(--panel-2);
+    border-radius: 8px; padding: 9px 11px; line-height: 1.6;
+  }
+  .splash-panel .contact-line b{ color: var(--brass); }
+  #agree-btn{
+    display:block; text-align:center; text-decoration:none;
+    width: 100%; padding: 14px; border-radius: 10px;
+    background: var(--chalk); color: #15161a; border: none;
+    font-size: 14.5px; font-weight: 800; letter-spacing: 0.03em;
+  }
+  #agree-btn:active{ transform: scale(0.98); }
+  .splash-foot{
+    text-align:center; font-size: 10.5px; color: var(--muted); margin-top: 12px; letter-spacing: 0.03em;
+  }
+
+  #app-shell{ display:none; }
+  #app-shell:target{ display:block; }
+  #app-shell:target ~ #splash{ display:none; }
+
+  /* scan modal */
+  .scan-modal{
+    position: fixed; inset:0; z-index: 200;
+    background: rgba(10,10,12,0.92);
+    overflow-y:auto; padding: 18px 14px 40px;
+  }
+  .scan-box{
+    max-width: 480px; margin: 0 auto;
+    background: var(--panel); border:1px solid var(--line); border-radius: var(--radius);
+    padding: 16px;
+  }
+  .scan-box h2{ font-size:15px; margin:0 0 4px; }
+  .scan-close{
+    float:right; background:none; border:none; color:var(--muted); font-size:20px; padding:2px 6px;
+  }
+  .scan-step-label{
+    font-size: 11px; letter-spacing:0.04em; color: var(--brass); font-weight:800; margin: 14px 0 8px;
+  }
+  .scan-photo-preview{
+    width:100%; max-height: 220px; object-fit: contain; border-radius:8px;
+    background:#000; margin-bottom:10px; display:block;
+  }
+  .scan-note{ font-size:11px; color:var(--muted); line-height:1.6; margin: 6px 0 10px; }
+  .scan-progress{
+    background: var(--panel-2); border-radius: 8px; height: 8px; overflow:hidden; margin: 10px 0;
+  }
+  .scan-progress-bar{
+    height:100%; background: var(--brass); width:0%; transition: width .2s;
+  }
+  .scan-progress-indeterminate{
+    width: 40% !important;
+    animation: scanIndeterminate 1.1s ease-in-out infinite;
+  }
+  @keyframes scanIndeterminate{
+    0%{ margin-left: 0%; }
+    50%{ margin-left: 60%; }
+    100%{ margin-left: 0%; }
+  }
+  .scan-table-wrap{ overflow-x:auto; margin: 8px 0; }
+  .scan-table{ width:100%; border-collapse:collapse; font-size:12.5px; }
+  .scan-table th{ text-align:left; padding:5px 4px; color:var(--chalk-dim); font-size:10px; border-bottom:1px solid var(--line); }
+  .scan-table td{ padding:4px; border-bottom:1px solid var(--line); }
+  .scan-table input[type=text]{ padding:6px 6px; font-size:12.5px; }
+  .scan-table input[type=checkbox]{ width:18px; height:18px; }
+
+  @media (min-width: 640px){
+    .athlete-head{ }
+  }
+</style>
+</head>
+<body>
+
+<div id="app-shell">
+<div class="topbar">
+  <h1>POWERLIFTING SECOND LAB</h1>
+  <div class="sub" id="sub-label">SUBTOTAL &amp; TOTAL TRACKER — 同一階級内比較</div>
+  <div class="mode-switch" id="mode-switch"></div>
+  <div class="lang-switch" id="lang-switch"></div>
+  <div class="tabs" id="tabs"></div>
+</div>
+
+<main id="main"></main>
+</div>
+
+<div id="splash">
+  <div class="splash-card">
+    <input type="radio" name="splash-lang" id="splash-lang-ja" class="lang-radio" checked>
+    <input type="radio" name="splash-lang" id="splash-lang-en" class="lang-radio">
+    <div class="lang-toggle">
+      <label for="splash-lang-ja">日本語</label>
+      <label for="splash-lang-en">English</label>
+    </div>
+
+    <div class="splash-eyebrow">POWERLIFTING</div>
+    <div class="splash-title">POWERLIFTING<br><span>SECOND</span> LAB</div>
+
+    <div class="lang-ja">
+      <div class="splash-tagline">セコンド作戦盤 ― 評価版(β)</div>
+      <div class="splash-panel">
+        <h2>⚠ ご利用にあたって(必ずお読みください)</h2>
+        <p>本アプリは評価・検証段階の試作ツールです。試合運営や公式記録のための計算を保証するものではありません。</p>
+        <p>重量やランキングの計算には誤りが含まれる可能性があります。本アプリの表示内容を理由に生じたいかなる不利益・損害についても、作成者は責任を負いかねます。試技重量の最終判断は必ずご自身の確認のもとで行ってください。</p>
+        <div class="contact-line">変更・改善の要望や不具合の報告は <a href="https://www.instagram.com/benchpress_suzukia/" target="_blank" rel="noopener noreferrer" style="color:var(--brass);font-weight:800;text-decoration:underline;">鈴木(Instagram)</a> までご連絡ください。</div>
+      </div>
+      <a href="#app-shell" id="agree-btn-ja" class="agree-btn-el">上記に同意して利用を開始する</a>
+      <div class="splash-foot">同意すると、このメッセージは今回のセッション中は表示されません</div>
+    </div>
+
+    <div class="lang-en">
+      <div class="splash-tagline">Second's Playbook ― Beta</div>
+      <div class="splash-panel">
+        <h2>⚠ Please Read Before Using</h2>
+        <p>This app is an experimental prototype under evaluation. It is not guaranteed to be accurate for running an official meet or for official record-keeping.</p>
+        <p>Weight and ranking calculations may contain errors. The creator is not liable for any loss or disadvantage arising from this app's output. Always confirm final attempt weight decisions yourself.</p>
+        <div class="contact-line">For change requests or bug reports, contact <a href="https://www.instagram.com/benchpress_suzukia/" target="_blank" rel="noopener noreferrer" style="color:var(--brass);font-weight:800;text-decoration:underline;">Suzuki (Instagram)</a>.</div>
+      </div>
+      <a href="#app-shell" id="agree-btn-en" class="agree-btn-el">I Agree — Start Using</a>
+      <div class="splash-foot">Once you agree, this message won't show again this session</div>
+    </div>
+  </div>
+</div>
+
+<div id="scan-modal" class="scan-modal" style="display:none"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---------- state ----------
+  var state = {
+    tab: "roster",
+    mode: "pl", // "pl" = パワーリフティング(3種目) / "bench" = ベンチプレスのみ
+    lang: "ja", // "ja" / "en"
+    athletes: []
+  };
+  var uidCounter = 1;
+  function uid(){ return "a" + (uidCounter++); }
+
+  // ---------- i18n ----------
+  var STR = {
+    ja: {
+      tabRosterPL: "選手・SQ/BP", tabRosterBench: "選手",
+      tabDeadlift: "デッドリフト", tabBench: "ベンチプレス",
+      tabRanking: "順位表", tabTarget: "ターゲット",
+      subPL: "SUBTOTAL &amp; TOTAL TRACKER — 同一階級内比較",
+      subBench: "BENCH PRESS ONLY TRACKER — 同一階級内比較",
+      modePL: "パワーリフティング(SQ/BP/DL)", modeBench: "ベンチプレスのみ",
+      addAthleteLabel: "選手名を追加", addAthletePlaceholder: "例) 山田 太郎",
+      addAthleteBtn: "＋ 選手を追加",
+      rosterEyebrowPL: "選手一覧・体重・SQ/BP成功重量", rosterEyebrowBench: "選手一覧・体重",
+      emptyRoster: "まだ選手が登録されていません。<br>上のフォームから追加してください。",
+      mainToggleTitle: "担当選手(メイン)に設定", namePlaceholder: "選手名", mainTag: "担当",
+      deleteConfirmSuffix: " を削除しますか?",
+      fieldBodyweight: "体重(kg)", fieldSquat: "スクワット", fieldBench: "ベンチプレス",
+      statSubtotal: "サブトータル(SQ+BP)", statTotalPL: "現在のトータル(+DL自己ベスト)",
+      statTotalBench: "ベンチプレス自己ベスト",
+      scanBtn: "📷 スキャンして登録",
+      dlHint: "各試技の重量を入力し、判定ライトをタップして 未定 → GOOD(白) → NO LIFT(赤) を切り替えます。",
+      dlEmptyPL: "「選手・SQ/BP」タブで選手を登録してください。",
+      dlEmptyBench: "「選手」タブで選手を登録してください。",
+      dlBestLabel: "DL成功ベスト", benchBestLabel: "成功ベスト", currentTotalLabel: "現在のトータル",
+      rankHintMain: "「逆転に必要な差」は体重差ルールを考慮した数値です。プラスは既にリードしている差分、マイナスは次の申請で上回るために必要な追加重量(2.5kg刻み)です。",
+      rankTotalHeaderPL: "現在のトータル暫定順位(SUB+DL成功ベスト)",
+      rankTotalHeaderBench: "ベンチプレス暫定順位",
+      rankSubHeader: "サブトータル暫定順位(SQ+BP)",
+      rankNoMainPL: "「選手・SQ/BP」タブで ★ を押して担当選手を設定すると、体重差・重量差が表示されます。",
+      rankNoMainBench: "「選手」タブで ★ を押して担当選手を設定すると、体重差・重量差が表示されます。",
+      rankEmpty: "選手を登録すると順位表が表示されます。",
+      thRank: "順位", thAthlete: "選手", thBW: "体重", thWeight: "重量", thGap: "逆転に必要な差",
+      targetEmptyAthletes: "選手を登録すると計算できます。",
+      targetEmptyMainPL: "「選手・SQ/BP」タブで ★ を押し、担当選手(メイン)を設定してください。",
+      targetEmptyMainBench: "「選手」タブで ★ を押し、担当選手(メイン)を設定してください。",
+      targetEmptyOthers: "比較する他の選手がまだいません。",
+      targetHeadLabel: "担当:", targetSubtotalLabel: "サブトータル", targetCurrentTotalLabel: "現トータル",
+      targetEyebrowDL: "各選手に勝つために必要なデッドリフト重量",
+      targetEyebrowBench: "各選手に勝つために必要なベンチプレス重量",
+      oppWaiting: "相手の記録待ち", oppNoResultNote: "相手選手の記録がまだ登録されていません。",
+      tieLighter: "体重で有利のため、同重量(タイ)でも勝ちです。",
+      tieHeavier: "体重で不利のため、上回る重量が必要です。",
+      tieUnknown: "体重未入力のため、上回る前提で計算しています。",
+      achieved: "達成済", achievedNote: "現時点で上回っています",
+      zeroNeededPL: "SQ+BPだけで既に上回り", zeroNeededBench: "既に上回っています",
+      neededDLLabel: "デッドリフトで必要な重量", neededBenchLabel: "ベンチプレスで必要な重量",
+      alreadyDeclaredNote1: "既に宣言済みの重量(", alreadyDeclaredNote2: "kg)で条件を満たす見込みです。",
+      nextAttemptNote1: "次の未実施試技: 第", nextAttemptNote2: "試技。",
+      allDoneNote: "全試技が終了しています。",
+      scanTitle: "スキャンして選手登録",
+      scanStep1: "① 画面を撮影 / 写真を選択", scanCaptureBtn: "📷 撮影する",
+      scanNextBtn: "次へ(範囲を選択)", scanRetakeBtn: "撮り直す",
+      scanStepCrop: "② 読み取る範囲を選択", scanCropHint: "Name・検量体重・IPF Wt Clsの見出し行を含むように、対象の範囲を指でドラッグして囲んでください。範囲を絞るほど読み取り精度が上がります。",
+      scanCropConfirmBtn: "この範囲でOCRを実行", scanCropSkipBtn: "範囲選択せず全体で実行",
+      scanProcessing: "解析中…(初回はライブラリの読み込みに時間がかかることがあります)",
+      scanNeedsNet: "※初回の解析時のみインターネット接続が必要です。2回目以降は同じ端末・ブラウザであればオフラインでも動作する見込みです。",
+      scanFailed: "解析に失敗しました。範囲を選び直すか、通信環境を確認してもう一度お試しください。",
+      scanStep2: "③ 内容を確認・修正",
+      scanReviewHint: "自動読み取りは誤りを含むことがあります。階級・名前・体重を確認し、必要に応じて修正してください。",
+      scanStep3: "④ 階級で絞り込み(空欄で全件表示)",
+      scanClassPlaceholder: "例) 83",
+      scanColClass: "階級", scanColName: "名前", scanColBW: "体重", scanColInclude: "登録",
+      scanRegisterBtn: "選択した選手を登録", scanCancelBtn: "キャンセル", scanCloseBtn: "閉じる",
+      scanNoRowsYet: "まだ解析結果がありません。上で撮影・解析してください。"
+    },
+    en: {
+      tabRosterPL: "Athletes", tabRosterBench: "Athletes",
+      tabDeadlift: "Deadlift", tabBench: "Bench Press",
+      tabRanking: "Rankings", tabTarget: "Target",
+      subPL: "SUBTOTAL &amp; TOTAL TRACKER — compare within the same weight class",
+      subBench: "BENCH PRESS ONLY TRACKER — compare within the same weight class",
+      modePL: "Powerlifting (SQ/BP/DL)", modeBench: "Bench Press Only",
+      addAthleteLabel: "Add athlete name", addAthletePlaceholder: "e.g. John Smith",
+      addAthleteBtn: "+ Add Athlete",
+      rosterEyebrowPL: "Athletes · Bodyweight · SQ/BP Best", rosterEyebrowBench: "Athletes · Bodyweight",
+      emptyRoster: "No athletes registered yet.<br>Add one using the form above.",
+      mainToggleTitle: "Set as your athlete (main)", namePlaceholder: "Athlete name", mainTag: "MAIN",
+      deleteConfirmSuffix: "?\nDelete this athlete?",
+      fieldBodyweight: "Bodyweight (kg)", fieldSquat: "Squat", fieldBench: "Bench Press",
+      statSubtotal: "Subtotal (SQ+BP)", statTotalPL: "Current Total (+DL best)",
+      statTotalBench: "Bench Press Best",
+      scanBtn: "📷 Scan & Register",
+      dlHint: "Enter each attempt's weight, then tap the judge light to cycle Pending → GOOD (white) → NO LIFT (red).",
+      dlEmptyPL: "Register athletes in the “Athletes” tab first.",
+      dlEmptyBench: "Register athletes in the “Athletes” tab first.",
+      dlBestLabel: "DL Best", benchBestLabel: "Best Lift", currentTotalLabel: "Current Total",
+      rankHintMain: "“Gap to overtake” accounts for the bodyweight tiebreak rule. Positive = current lead. Negative = extra weight (in 2.5kg steps) needed on the next attempt to move ahead.",
+      rankTotalHeaderPL: "Current Total Standings (Subtotal + DL Best)",
+      rankTotalHeaderBench: "Bench Press Standings",
+      rankSubHeader: "Subtotal Standings (SQ+BP)",
+      rankNoMainPL: "Tap ★ in the Athletes tab to set your athlete — this shows bodyweight and weight gaps.",
+      rankNoMainBench: "Tap ★ in the Athletes tab to set your athlete — this shows bodyweight and weight gaps.",
+      rankEmpty: "Rankings will appear once athletes are registered.",
+      thRank: "Rank", thAthlete: "Athlete", thBW: "BW", thWeight: "Weight", thGap: "Gap to Overtake",
+      targetEmptyAthletes: "Calculations will appear once athletes are registered.",
+      targetEmptyMainPL: "Tap ★ in the Athletes tab to set your athlete (main).",
+      targetEmptyMainBench: "Tap ★ in the Athletes tab to set your athlete (main).",
+      targetEmptyOthers: "No other athletes to compare yet.",
+      targetHeadLabel: "Main:", targetSubtotalLabel: "Subtotal", targetCurrentTotalLabel: "Current Total",
+      targetEyebrowDL: "Deadlift weight needed to beat each athlete",
+      targetEyebrowBench: "Bench press weight needed to beat each athlete",
+      oppWaiting: "Waiting on opponent's result", oppNoResultNote: "This athlete has no result yet.",
+      tieLighter: "Lighter bodyweight — a tie is enough to win.",
+      tieHeavier: "Heavier bodyweight — must exceed, not just tie.",
+      tieUnknown: "Bodyweight not entered — assuming you must exceed.",
+      achieved: "Achieved", achievedNote: "Already ahead",
+      zeroNeededPL: "Already ahead from SQ+BP alone", zeroNeededBench: "Already ahead",
+      neededDLLabel: "Deadlift weight needed", neededBenchLabel: "Bench press weight needed",
+      alreadyDeclaredNote1: "Your declared weight (", alreadyDeclaredNote2: "kg) should already meet this.",
+      nextAttemptNote1: "Next attempt: #", nextAttemptNote2: ".",
+      allDoneNote: "All attempts are complete.",
+      scanTitle: "Scan &amp; Register Athletes",
+      scanStep1: "① Take or choose a photo", scanCaptureBtn: "📷 Take Photo",
+      scanNextBtn: "Next (select area)", scanRetakeBtn: "Retake",
+      scanStepCrop: "② Select the area to read", scanCropHint: "Drag to draw a box around the area including the Name, 検量体重 (bodyweight), and IPF Wt Cls header row. A tighter crop improves accuracy.",
+      scanCropConfirmBtn: "Run OCR on this area", scanCropSkipBtn: "Run on the whole photo instead",
+      scanProcessing: "Analyzing… (the first run may take a moment to load the OCR library)",
+      scanNeedsNet: "Note: an internet connection is needed only the first time you analyze. After that it should work offline on the same device/browser.",
+      scanFailed: "Analysis failed. Try selecting the area again, or check your connection and retry.",
+      scanStep2: "③ Review &amp; Edit",
+      scanReviewHint: "Automatic recognition can contain errors. Please check and correct the class, name, and bodyweight.",
+      scanStep3: "④ Filter by weight class (leave blank to show all)",
+      scanClassPlaceholder: "e.g. 83",
+      scanColClass: "Class", scanColName: "Name", scanColBW: "BW", scanColInclude: "Add",
+      scanRegisterBtn: "Register Selected", scanCancelBtn: "Cancel", scanCloseBtn: "Close",
+      scanNoRowsYet: "No results yet. Take a photo and analyze above."
+    }
+  };
+  function t(key){
+    var d = STR[state.lang] || STR.ja;
+    return (d[key] !== undefined) ? d[key] : (STR.ja[key] !== undefined ? STR.ja[key] : key);
+  }
+
+  function newAthlete(name){
+    return {
+      id: uid(),
+      name: name || "",
+      bodyweight: "",
+      squat: "",
+      bench: "",
+      main: false,
+      deadlift: [
+        { weight: "", status: "pending" },
+        { weight: "", status: "pending" },
+        { weight: "", status: "pending" }
+      ]
+    };
+  }
+
+  // ---------- helpers ----------
+  function num(v){
+    var n = parseFloat(v);
+    return isNaN(n) ? 0 : n;
+  }
+  function fmt(n){
+    if (n === null || n === undefined) return "—";
+    n = Math.round(n * 100) / 100;
+    return (n % 1 === 0) ? String(n) : String(n);
+  }
+  function bestDeadlift(a){
+    var best = 0;
+    a.deadlift.forEach(function(d){
+      if (d.status === "good"){
+        var w = num(d.weight);
+        if (w > best) best = w;
+      }
+    });
+    return best;
+  }
+  function lastAttemptedWeight(a){
+    // 現時点で「宣言済み」とみなせる最大重量(成功/失敗問わず入力があるもの)
+    var w = 0;
+    a.deadlift.forEach(function(d){
+      if (d.weight !== "" && num(d.weight) > 0) w = Math.max(w, num(d.weight));
+    });
+    return w;
+  }
+  function subtotal(a){ return num(a.squat) + num(a.bench); }
+  function total(a){ return subtotal(a) + bestDeadlift(a); }
+  function provBadge(a, d){
+    var w = num(d.weight);
+    if (!d.weight || w <= 0){
+      return '<span style="color:var(--muted)">—</span>';
+    }
+    var provTotal = subtotal(a) + w;
+    return '<b>' + fmt(provTotal) + '</b>';
+  }
+  function nextPendingIndex(a){
+    for (var i=0;i<3;i++){ if (a.deadlift[i].status === "pending") return i; }
+    return -1;
+  }
+
+  // 順位計算: トータル降順、同着は体重が軽い方が上位
+  function rank(list, keyFn){
+    var withVal = list.map(function(a){ return { a:a, v: keyFn(a) }; });
+    withVal.sort(function(x,y){
+      if (y.v !== x.v) return y.v - x.v;
+      var bwx = num(x.a.bodyweight), bwy = num(y.a.bodyweight);
+      if (bwx === 0 && bwy === 0) return 0;
+      if (bwx === 0) return 1;
+      if (bwy === 0) return -1;
+      return bwx - bwy;
+    });
+    return withVal;
+  }
+
+  function getMain(){
+    return state.athletes.find(function(a){ return a.main; });
+  }
+
+  // 相手に勝つために必要な「あと何kg」を体重差ルール込みで計算
+  // 戻り値: { ahead: true/false, amount: 表示するkg数 }
+  function overtakeNeeded(mainVal, oppVal, mainBW, oppBW){
+    var gap = oppVal - mainVal;
+    var mainLighter = (mainBW > 0 && oppBW > 0) ? (mainBW < oppBW) : null;
+    if (gap < 0){
+      return { ahead: true, amount: -gap };
+    }
+    if (gap === 0 && mainLighter === true){
+      return { ahead: true, amount: 0 };
+    }
+    var needed = (mainLighter === true) ? gap : gap + 2.5;
+    if (needed < 0) needed = 0;
+    return { ahead: false, amount: needed };
+  }
+
+  // ---------- rendering ----------
+  function isBench(){ return state.mode === "bench"; }
+
+  function getTabs(){
+    return [
+      { id: "roster", label: isBench() ? t("tabRosterBench") : t("tabRosterPL") },
+      { id: "deadlift", label: isBench() ? t("tabBench") : t("tabDeadlift") },
+      { id: "ranking", label: t("tabRanking") },
+      { id: "target", label: t("tabTarget") }
+    ];
+  }
+
+  function render(){
+    renderModeSwitch();
+    renderLangSwitch();
+    renderTabs();
+    var main = document.getElementById("main");
+    main.innerHTML = "";
+    var view = document.createElement("div");
+    view.className = "view active";
+    if (state.tab === "roster") view.appendChild(renderRoster());
+    if (state.tab === "deadlift") view.appendChild(renderDeadlift());
+    if (state.tab === "ranking") view.appendChild(renderRanking());
+    if (state.tab === "target") view.appendChild(renderTarget());
+    main.appendChild(view);
+
+    var subLabel = document.getElementById("sub-label");
+    if (subLabel){
+      subLabel.innerHTML = isBench() ? t("subBench") : t("subPL");
+    }
+  }
+
+  function renderModeSwitch(){
+    var box = document.getElementById("mode-switch");
+    if (!box) return;
+    box.innerHTML = "";
+    var modes = [
+      { key: "pl", label: t("modePL") },
+      { key: "bench", label: t("modeBench") }
+    ];
+    modes.forEach(function(m){
+      var b = document.createElement("button");
+      b.className = "mode-btn" + (state.mode === m.key ? " active" : "");
+      b.textContent = m.label;
+      b.onclick = function(){
+        if (state.mode !== m.key){
+          state.mode = m.key;
+          state.tab = "roster";
+          render();
+        }
+      };
+      box.appendChild(b);
+    });
+  }
+
+  function renderLangSwitch(){
+    var box = document.getElementById("lang-switch");
+    if (!box) return;
+    box.innerHTML = "";
+    var langs = [
+      { key: "ja", label: "日本語" },
+      { key: "en", label: "English" }
+    ];
+    langs.forEach(function(l){
+      var b = document.createElement("button");
+      b.className = "lang-btn" + (state.lang === l.key ? " active" : "");
+      b.textContent = l.label;
+      b.onclick = function(){
+        if (state.lang !== l.key){
+          state.lang = l.key;
+          render();
+        }
+      };
+      box.appendChild(b);
+    });
+  }
+
+  function renderTabs(){
+    var tabs = document.getElementById("tabs");
+    tabs.innerHTML = "";
+    getTabs().forEach(function(t){
+      var b = document.createElement("button");
+      b.className = "tab" + (state.tab === t.id ? " active" : "");
+      b.textContent = t.label;
+      b.onclick = function(){ state.tab = t.id; render(); };
+      tabs.appendChild(b);
+    });
+  }
+
+  function el(tag, cls, html){
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (html !== undefined) e.innerHTML = html;
+    return e;
+  }
+
+  // ---- roster view ----
+  function renderRoster(){
+    var wrap = document.createDocumentFragment ? el("div") : el("div");
+
+    var addCard = el("div", "card");
+    var rowDiv = el("div", "row");
+    var fieldDiv = el("div", "field");
+    fieldDiv.innerHTML = '<label>' + t("addAthleteLabel") + '</label><input type="text" id="new-name" placeholder="' + escapeHtml(t("addAthletePlaceholder")) + '">';
+    rowDiv.appendChild(fieldDiv);
+    addCard.appendChild(rowDiv);
+
+    var addBtn = el("button", "btn btn-primary btn-block", escapeHtml(t("addAthleteBtn")));
+    addBtn.style.marginTop = "10px";
+    addBtn.onclick = function(){
+      var input = document.getElementById("new-name");
+      var name = input.value.trim();
+      state.athletes.push(newAthlete(name || (state.lang === "en" ? "Athlete " : "選手") + (state.athletes.length+1)));
+      render();
+    };
+    addCard.appendChild(addBtn);
+
+    var scanBtn = el("button", "btn btn-block", escapeHtml(t("scanBtn")));
+    scanBtn.style.marginTop = "8px";
+    scanBtn.onclick = function(){ openScanModal(); };
+    addCard.appendChild(scanBtn);
+
+    wrap.appendChild(addCard);
+
+    wrap.appendChild(el("div", "eyebrow", isBench() ? t("rosterEyebrowBench") : t("rosterEyebrowPL")));
+
+    if (state.athletes.length === 0){
+      wrap.appendChild(el("div", "empty", t("emptyRoster")));
+      return wrap;
+    }
+
+    state.athletes.forEach(function(a){
+      var card = el("div", "athlete-card" + (a.main ? " is-main" : ""));
+
+      var head = el("div", "athlete-head");
+      var mainBtn = el("button", "main-toggle" + (a.main ? " checked" : ""), "★");
+      mainBtn.title = t("mainToggleTitle");
+      mainBtn.onclick = function(){
+        state.athletes.forEach(function(x){ x.main = false; });
+        a.main = true;
+        render();
+      };
+      head.appendChild(mainBtn);
+
+      var nameInput = el("input");
+      nameInput.className = "athlete-name";
+      nameInput.value = a.name;
+      nameInput.placeholder = t("namePlaceholder");
+      nameInput.oninput = function(e){ a.name = e.target.value; };
+      head.appendChild(nameInput);
+
+      if (a.main) head.appendChild(el("span", "main-tag", t("mainTag")));
+
+      var delBtn = el("button", "del-x", "×");
+      delBtn.onclick = function(){
+        if (confirm(a.name + t("deleteConfirmSuffix"))){
+          state.athletes = state.athletes.filter(function(x){ return x.id !== a.id; });
+          render();
+        }
+      };
+      head.appendChild(delBtn);
+      card.appendChild(head);
+
+      if (isBench()){
+        card.appendChild(makeNumField(t("fieldBodyweight"), a.bodyweight, function(v){ a.bodyweight = v; }));
+      } else {
+        var grid = el("div", "grid3");
+        grid.appendChild(makeNumField(t("fieldBodyweight"), a.bodyweight, function(v){ a.bodyweight = v; }));
+        grid.appendChild(makeNumField(t("fieldSquat"), a.squat, function(v){ a.squat = v; }));
+        grid.appendChild(makeNumField(t("fieldBench"), a.bench, function(v){ a.bench = v; }));
+        card.appendChild(grid);
+      }
+
+      var outWrap = el("div", "grid2");
+      outWrap.style.marginTop = "8px";
+      if (!isBench()){
+        var st = el("div", "stat-out");
+        st.innerHTML = '<div class="num">' + fmt(subtotal(a)) + ' <span style="font-size:11px;color:var(--chalk-dim)">kg</span></div><div class="lbl">' + t("statSubtotal") + '</div>';
+        outWrap.appendChild(st);
+      }
+      var st2 = el("div", "stat-out");
+      st2.innerHTML = '<div class="num">' + fmt(total(a)) + ' <span style="font-size:11px;color:var(--chalk-dim)">kg</span></div><div class="lbl">' + (isBench() ? t("statTotalBench") : t("statTotalPL")) + '</div>';
+      outWrap.appendChild(st2);
+      card.appendChild(outWrap);
+
+      wrap.appendChild(card);
+    });
+
+    return wrap;
+  }
+
+  function makeNumField(labelText, val, onChange){
+    var f = el("div", "field");
+    var l = el("label", null, labelText);
+    var i = el("input");
+    i.type = "text";
+    i.inputMode = "decimal";
+    i.placeholder = "0";
+    i.value = val;
+    i.oninput = function(e){
+      var v = e.target.value.replace(/[^0-9.]/g, "");
+      onChange(v);
+    };
+    f.appendChild(l); f.appendChild(i);
+    return f;
+  }
+
+  // ---- deadlift / bench view ----
+  function renderDeadlift(){
+    var wrap = el("div");
+    wrap.appendChild(el("div", "hint", t("dlHint")));
+
+    if (state.athletes.length === 0){
+      wrap.appendChild(el("div", "empty", isBench() ? t("dlEmptyBench") : t("dlEmptyPL")));
+      return wrap;
+    }
+
+    state.athletes.forEach(function(a){
+      var card = el("div", "athlete-card" + (a.main ? " is-main" : ""));
+      var head = el("div", "athlete-head");
+      var nm = el("div", null, a.name || "(無名)");
+      nm.style.fontWeight = "800"; nm.style.fontSize = "15px"; nm.style.flex = "1";
+      head.appendChild(nm);
+      if (a.main) head.appendChild(el("span", "main-tag", t("mainTag")));
+      if (!isBench()){
+        var sub = el("span", null, "SUB " + fmt(subtotal(a)) + "kg");
+        sub.style.cssText = "font-family:var(--font-mono);font-size:12px;color:var(--chalk-dim);";
+        head.appendChild(sub);
+      }
+      card.appendChild(head);
+
+      a.deadlift.forEach(function(d, idx){
+        var row = el("div", "dl-attempt");
+        row.appendChild(el("div", "attn", (idx+1)));
+        var wInput = el("input");
+        wInput.type = "text"; wInput.inputMode = "decimal";
+        wInput.placeholder = "kg";
+        wInput.value = d.weight;
+        var provId = "prov-" + a.id + "-" + idx;
+        wInput.oninput = function(e){
+          d.weight = e.target.value.replace(/[^0-9.]/g, "");
+          var provEl = document.getElementById(provId);
+          if (provEl) provEl.innerHTML = provBadge(a, d);
+        };
+        wInput.onblur = function(){ render(); };
+        row.appendChild(wInput);
+
+        var prov = el("div", "dl-prov");
+        prov.id = provId;
+        prov.innerHTML = provBadge(a, d);
+        row.appendChild(prov);
+
+        var lights = el("div", "lights");
+        var states = [
+          { key: "pending", label: "―" },
+          { key: "good", label: "GOOD" },
+          { key: "nolift", label: "NO" }
+        ];
+        states.forEach(function(s){
+          var lt = el("div", "light" + (d.status === s.key ? " " + s.key : (s.key === "pending" ? " pending" : "")));
+          // show label only on the active circle to keep it clean; else show short mark
+          lt.textContent = s.key === "pending" ? "―" : (s.key === "good" ? "白" : "赤");
+          if (d.status === s.key){
+            lt.classList.add(s.key);
+          }
+          lt.onclick = function(){ d.status = s.key; render(); };
+          lights.appendChild(lt);
+        });
+        row.appendChild(lights);
+        card.appendChild(row);
+      });
+
+      var outWrap = el("div", "grid2");
+      outWrap.style.marginTop = "6px";
+      var st = el("div", "stat-out");
+      st.innerHTML = '<div class="num">' + fmt(bestDeadlift(a)) + ' kg</div><div class="lbl">' + (isBench() ? t("benchBestLabel") : t("dlBestLabel")) + '</div>';
+      outWrap.appendChild(st);
+      var st2 = el("div", "stat-out");
+      st2.innerHTML = '<div class="num">' + fmt(total(a)) + ' kg</div><div class="lbl">' + t("currentTotalLabel") + '</div>';
+      outWrap.appendChild(st2);
+      card.appendChild(outWrap);
+
+      wrap.appendChild(card);
+    });
+
+    return wrap;
+  }
+
+  // ---- ranking view ----
+  function renderRanking(){
+    var wrap = el("div");
+    if (state.athletes.length === 0){
+      wrap.appendChild(el("div", "empty", t("rankEmpty")));
+      return wrap;
+    }
+    var main = getMain();
+
+    if (main){
+      wrap.appendChild(el("div", "hint", t("rankHintMain")));
+    }
+
+    wrap.appendChild(el("div", "eyebrow", isBench() ? t("rankTotalHeaderBench") : t("rankTotalHeaderPL")));
+    wrap.appendChild(buildRankTable(rank(state.athletes, total), main, total));
+
+    if (!isBench()){
+      wrap.appendChild(el("div", "eyebrow", t("rankSubHeader")));
+      wrap.appendChild(buildRankTable(rank(state.athletes, subtotal), main, subtotal));
+    }
+
+    if (!main){
+      var note = el("div", "hint", isBench() ? t("rankNoMainBench") : t("rankNoMainPL"));
+      wrap.insertBefore(note, wrap.firstChild);
+    }
+    return wrap;
+  }
+
+  function buildRankTable(ranked, main, keyFn){
+    var card = el("div", "card");
+    var table = el("table");
+    var thead = el("thead");
+    thead.innerHTML = "<tr><th>" + t("thRank") + "</th><th>" + t("thAthlete") + "</th><th>" + t("thBW") + "</th><th class='num-cell'>" + t("thWeight") + "</th><th class='num-cell'>" + t("thGap") + "</th></tr>";
+    table.appendChild(thead);
+    var tbody = el("tbody");
+    ranked.forEach(function(r, i){
+      var tr = el("tr", r.a.main ? "main-row" : "");
+      var rankTd = el("td");
+      var badge = el("span", "rank-badge" + (i===0?" top":""), String(i+1));
+      rankTd.appendChild(badge);
+      tr.appendChild(rankTd);
+      tr.appendChild(el("td", null, escapeHtml(r.a.name || "(無名)")));
+      tr.appendChild(el("td", null, (r.a.bodyweight ? fmt(num(r.a.bodyweight)) + "kg" : "—")));
+      tr.appendChild(el("td", "num-cell", fmt(r.v) + "kg"));
+
+      var diffTd = el("td", "num-cell");
+      if (main && r.a.id !== main.id){
+        var mainVal = keyFn(main);
+        var info = overtakeNeeded(mainVal, r.v, num(main.bodyweight), num(r.a.bodyweight));
+        if (info.ahead){
+          diffTd.innerHTML = '<span class="diff-pos">+' + fmt(info.amount) + '</span>';
+        } else {
+          diffTd.innerHTML = '<span class="diff-neg">-' + fmt(info.amount) + '</span>';
+        }
+      } else if (main && r.a.id === main.id){
+        diffTd.innerHTML = '<span style="color:var(--brass);font-weight:700;">' + t("mainTag") + '</span>';
+      } else {
+        diffTd.textContent = "—";
+      }
+      tr.appendChild(diffTd);
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    card.appendChild(table);
+    return card;
+  }
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+    });
+  }
+
+  // ---- target calculator view ----
+  function renderTarget(){
+    var wrap = el("div");
+    var main = getMain();
+
+    if (state.athletes.length === 0){
+      wrap.appendChild(el("div", "empty", t("targetEmptyAthletes")));
+      return wrap;
+    }
+    if (!main){
+      wrap.appendChild(el("div", "empty", isBench() ? t("targetEmptyMainBench") : t("targetEmptyMainPL")));
+      return wrap;
+    }
+
+    var others = state.athletes.filter(function(a){ return a.id !== main.id; });
+    if (others.length === 0){
+      wrap.appendChild(el("div", "empty", t("targetEmptyOthers")));
+      return wrap;
+    }
+
+    var mainSub = subtotal(main);
+    var mainBW = num(main.bodyweight);
+    var mainBestAttempted = lastAttemptedWeight(main);
+    var mainBestGood = bestDeadlift(main);
+    var pendingIdx = nextPendingIndex(main);
+
+    var headCard = el("div", "card");
+    headCard.innerHTML =
+      '<div style="font-size:13px;color:var(--chalk-dim);">' + t("targetHeadLabel") + ' <b style="color:var(--chalk)">' + escapeHtml(main.name||"(無名)") + '</b>　' +
+      (isBench() ? '' : t("targetSubtotalLabel") + ' <b style="font-family:var(--font-mono)">' + fmt(mainSub) + 'kg</b>　') +
+      t("targetCurrentTotalLabel") + ' <b style="font-family:var(--font-mono)">' + fmt(total(main)) + 'kg</b></div>';
+    wrap.appendChild(headCard);
+
+    wrap.appendChild(el("div", "eyebrow", isBench() ? t("targetEyebrowBench") : t("targetEyebrowDL")));
+
+    others.forEach(function(opp){
+      var oppTotal = total(opp);
+      var oppBW = num(opp.bodyweight);
+      var oppHasResult = subtotal(opp) > 0 || bestDeadlift(opp) > 0;
+
+      var card = el("div", "target-card");
+      var head = el("div", "target-head");
+      head.appendChild(el("div", "target-name", escapeHtml(opp.name || "(無名)")));
+      var subEl = el("div", "target-sub", t("targetCurrentTotalLabel") + " " + fmt(oppTotal) + "kg" + (oppBW ? " ／ " + fmt(oppBW) + "kg" : ""));
+      head.appendChild(subEl);
+      card.appendChild(head);
+
+      var board = el("div", "target-board");
+
+      if (!oppHasResult && oppTotal === 0){
+        board.innerHTML = '<div class="need-num">—</div><div class="need-lbl">' + t("oppWaiting") + '</div>';
+        card.appendChild(board);
+        card.appendChild(el("div", "target-note", t("oppNoResultNote")));
+        wrap.appendChild(card);
+        return;
+      }
+
+      // 体重差による同着判定: 担当が軽ければ同重量で勝ち、重ければ+1刻み必要
+      var mainLighter = (mainBW > 0 && oppBW > 0) ? (mainBW < oppBW) : null;
+      var needTotal;
+      var tieNote;
+      if (mainLighter === true){
+        needTotal = oppTotal; // 同着なら体重が軽い担当の勝ち
+        tieNote = t("tieLighter");
+      } else if (mainLighter === false){
+        needTotal = oppTotal + 2.5; // 体重で不利、上回る必要
+        tieNote = t("tieHeavier");
+      } else {
+        needTotal = oppTotal + 2.5;
+        tieNote = t("tieUnknown");
+      }
+
+      var neededDL = needTotal - mainSub;
+      // 2.5kg刻みに切り上げ、既存の最高試技より軽くはしない
+      var roundedDL = Math.ceil(neededDL / 2.5) * 2.5;
+      if (roundedDL < 0) roundedDL = 0;
+
+      var mainCurrentTotal = mainSub + mainBestGood;
+      var alreadyAhead = mainLighter === true
+        ? mainCurrentTotal >= oppTotal
+        : mainCurrentTotal > oppTotal;
+
+      if (alreadyAhead && mainCurrentTotal > 0){
+        board.innerHTML = '<div class="need-num" style="color:#8fbf6d;">' + t("achieved") + '</div><div class="need-lbl">' + t("achievedNote") + '</div>';
+      } else if (roundedDL <= 0){
+        board.innerHTML = '<div class="need-num" style="color:#8fbf6d;">0</div><div class="need-lbl">' + (isBench() ? t("zeroNeededBench") : t("zeroNeededPL")) + '</div>';
+      } else {
+        board.innerHTML = '<div class="need-num">' + fmt(roundedDL) + '<span style="font-size:16px;"> kg</span></div><div class="need-lbl">' + (isBench() ? t("neededBenchLabel") : t("neededDLLabel")) + '</div>';
+      }
+      card.appendChild(board);
+
+      var noteLines = [tieNote];
+      if (roundedDL > 0 && mainBestAttempted > 0 && roundedDL <= mainBestAttempted){
+        noteLines.push(t("alreadyDeclaredNote1") + fmt(mainBestAttempted) + t("alreadyDeclaredNote2"));
+      }
+      if (pendingIdx >= 0){
+        noteLines.push(t("nextAttemptNote1") + (pendingIdx+1) + t("nextAttemptNote2"));
+      } else {
+        noteLines.push(t("allDoneNote"));
+      }
+      card.appendChild(el("div", "target-note", noteLines.join(" ")));
+
+      wrap.appendChild(card);
+    });
+
+    return wrap;
+  }
+
+  // ---------- scan (camera + OCR) ----------
+  var scanState = {
+    step: "capture", // capture | crop | processing | review
+    photoDataUrl: null,
+    croppedDataUrl: null,
+    rows: [],
+    classFilter: "",
+    errorMsg: ""
+  };
+
+  function openScanModal(){
+    scanState = { step: "capture", photoDataUrl: null, croppedDataUrl: null, rows: [], classFilter: "", errorMsg: "" };
+    var modal = document.getElementById("scan-modal");
+    modal.style.display = "block";
+    renderScanModal();
+  }
+
+  function closeScanModal(){
+    var modal = document.getElementById("scan-modal");
+    modal.style.display = "none";
+    modal.innerHTML = "";
+  }
+
+  function renderScanModal(){
+    var modal = document.getElementById("scan-modal");
+    modal.innerHTML = "";
+    var box = el("div", "scan-box");
+
+    var closeBtn = el("button", "scan-close", "×");
+    closeBtn.onclick = function(){ closeScanModal(); };
+    box.appendChild(closeBtn);
+    box.appendChild(el("h2", null, t("scanTitle")));
+
+    if (scanState.step === "capture"){
+      box.appendChild(renderScanCaptureStep());
+    } else if (scanState.step === "crop"){
+      box.appendChild(renderScanCropStep());
+    } else if (scanState.step === "processing"){
+      box.appendChild(renderScanProcessingStep());
+    } else if (scanState.step === "review"){
+      box.appendChild(renderScanReviewStep());
+    }
+
+    modal.appendChild(box);
+  }
+
+  function renderScanCaptureStep(){
+    var wrap = el("div");
+    wrap.appendChild(el("div", "scan-step-label", t("scanStep1")));
+
+    if (scanState.photoDataUrl){
+      var img = el("img", "scan-photo-preview");
+      img.src = scanState.photoDataUrl;
+      wrap.appendChild(img);
+    }
+
+    var fileInput = el("input");
+    fileInput.type = "file";
+    fileInput.accept = "image/*";
+    fileInput.setAttribute("capture", "environment");
+    fileInput.style.display = "none";
+    fileInput.id = "scan-file-input";
+    fileInput.onchange = function(e){
+      var file = e.target.files && e.target.files[0];
+      if (!file) return;
+      var reader = new FileReader();
+      reader.onload = function(ev){
+        scanState.photoDataUrl = ev.target.result;
+        renderScanModal();
+      };
+      reader.readAsDataURL(file);
+    };
+    wrap.appendChild(fileInput);
+
+    var captureBtn = el("button", "btn btn-block", escapeHtml(t("scanCaptureBtn")));
+    captureBtn.onclick = function(){ fileInput.click(); };
+    wrap.appendChild(captureBtn);
+
+    if (scanState.photoDataUrl){
+      var nextBtn = el("button", "btn btn-primary btn-block", escapeHtml(t("scanNextBtn")));
+      nextBtn.style.marginTop = "8px";
+      nextBtn.onclick = function(){
+        scanState.step = "crop";
+        renderScanModal();
+      };
+      wrap.appendChild(nextBtn);
+    }
+
+    wrap.appendChild(el("div", "scan-note", t("scanNeedsNet")));
+    if (scanState.errorMsg){
+      var errEl = el("div", "scan-note");
+      errEl.style.color = "var(--red)";
+      errEl.textContent = scanState.errorMsg;
+      wrap.appendChild(errEl);
+    }
+    return wrap;
+  }
+
+  function renderScanCropStep(){
+    var wrap = el("div");
+    wrap.appendChild(el("div", "scan-step-label", t("scanStepCrop")));
+    wrap.appendChild(el("div", "scan-note", t("scanCropHint")));
+
+    var container = el("div");
+    container.style.cssText = "position:relative; width:100%; touch-action:none; user-select:none; margin-bottom:10px; border-radius:8px; overflow:hidden;";
+
+    var img = el("img");
+    img.src = scanState.photoDataUrl;
+    img.style.cssText = "width:100%; display:block; -webkit-user-select:none;";
+    img.draggable = false;
+    container.appendChild(img);
+
+    var rectDiv = el("div");
+    rectDiv.style.cssText = "position:absolute; border:2px solid var(--brass); background:rgba(201,162,39,0.22); display:none; pointer-events:none; left:0; top:0; width:0; height:0;";
+    container.appendChild(rectDiv);
+
+    var startX = 0, startY = 0, dragging = false, currentRectPx = null;
+
+    function getPos(e){
+      var r = container.getBoundingClientRect();
+      return {
+        x: Math.max(0, Math.min(e.clientX - r.left, r.width)),
+        y: Math.max(0, Math.min(e.clientY - r.top, r.height))
+      };
+    }
+    function updateRectDiv(left, top, w, h){
+      currentRectPx = { left: left, top: top, width: w, height: h };
+      rectDiv.style.left = left + "px";
+      rectDiv.style.top = top + "px";
+      rectDiv.style.width = w + "px";
+      rectDiv.style.height = h + "px";
+    }
+
+    container.addEventListener("pointerdown", function(e){
+      e.preventDefault();
+      var p = getPos(e);
+      startX = p.x; startY = p.y;
+      dragging = true;
+      rectDiv.style.display = "block";
+      updateRectDiv(startX, startY, 0, 0);
+    });
+    container.addEventListener("pointermove", function(e){
+      if (!dragging) return;
+      e.preventDefault();
+      var p = getPos(e);
+      var left = Math.min(startX, p.x), top = Math.min(startY, p.y);
+      var w = Math.abs(p.x - startX), h = Math.abs(p.y - startY);
+      updateRectDiv(left, top, w, h);
+    });
+    container.addEventListener("pointerup", function(e){
+      if (!dragging) return;
+      dragging = false;
+      var confirmBtn = document.getElementById("crop-confirm-btn");
+      if (confirmBtn && currentRectPx && currentRectPx.width > 20 && currentRectPx.height > 10){
+        confirmBtn.disabled = false;
+      }
+    });
+
+    wrap.appendChild(container);
+
+    var confirmBtn = el("button", "btn btn-primary btn-block", escapeHtml(t("scanCropConfirmBtn")));
+    confirmBtn.id = "crop-confirm-btn";
+    confirmBtn.disabled = true;
+    confirmBtn.onclick = function(){
+      if (!currentRectPx) return;
+      var natW = img.naturalWidth || img.width, natH = img.naturalHeight || img.height;
+      var dispW = img.clientWidth || 1, dispH = img.clientHeight || 1;
+      var scaleX = natW / dispW, scaleY = natH / dispH;
+      var rectNatural = {
+        x: Math.round(currentRectPx.left * scaleX),
+        y: Math.round(currentRectPx.top * scaleY),
+        w: Math.round(currentRectPx.width * scaleX),
+        h: Math.round(currentRectPx.height * scaleY)
+      };
+      scanState.step = "processing";
+      renderScanModal();
+      cropAndUpscale(scanState.photoDataUrl, rectNatural, function(croppedDataUrl){
+        scanState.croppedDataUrl = croppedDataUrl;
+        runOcr(croppedDataUrl);
+      });
+    };
+    wrap.appendChild(confirmBtn);
+
+    var skipBtn = el("button", "btn btn-block", escapeHtml(t("scanCropSkipBtn")));
+    skipBtn.style.marginTop = "8px";
+    skipBtn.onclick = function(){
+      scanState.step = "processing";
+      renderScanModal();
+      runOcr(scanState.photoDataUrl);
+    };
+    wrap.appendChild(skipBtn);
+
+    var backBtn = el("button", "btn btn-block", escapeHtml(t("scanRetakeBtn")));
+    backBtn.style.marginTop = "8px";
+    backBtn.onclick = function(){ scanState.step = "capture"; renderScanModal(); };
+    wrap.appendChild(backBtn);
+
+    return wrap;
+  }
+
+  function renderScanProcessingStep(){
+    var wrap = el("div");
+    wrap.appendChild(el("div", "scan-step-label", t("scanStep1")));
+    wrap.appendChild(el("div", "scan-note", t("scanProcessing")));
+    var bar = el("div", "scan-progress");
+    var inner = el("div", "scan-progress-bar scan-progress-indeterminate");
+    bar.appendChild(inner);
+    wrap.appendChild(bar);
+    return wrap;
+  }
+
+  function renderScanReviewStep(){
+    var wrap = el("div");
+    wrap.appendChild(el("div", "scan-step-label", t("scanStep2")));
+    wrap.appendChild(el("div", "scan-note", t("scanReviewHint")));
+
+    wrap.appendChild(el("div", "scan-step-label", t("scanStep3")));
+    var filterField = el("div", "field");
+    filterField.innerHTML = '<label>' + escapeHtml(t("scanClassPlaceholder")) + '</label>';
+    var filterInput = el("input");
+    filterInput.type = "text";
+    filterInput.placeholder = t("scanClassPlaceholder");
+    filterInput.value = scanState.classFilter;
+    filterInput.oninput = function(e){
+      scanState.classFilter = e.target.value;
+      renderScanModal();
+    };
+    filterField.appendChild(filterInput);
+    wrap.appendChild(filterField);
+
+    if (scanState.rows.length === 0){
+      wrap.appendChild(el("div", "empty", t("scanNoRowsYet")));
+    } else {
+      var filter = scanState.classFilter.trim();
+      var visibleRows = scanState.rows.filter(function(r){
+        if (!filter) return true;
+        return (r.cls || "").indexOf(filter) !== -1;
+      });
+
+      var tableWrap = el("div", "scan-table-wrap");
+      var table = el("table", "scan-table");
+      var thead = el("thead");
+      thead.innerHTML = "<tr><th>" + t("scanColInclude") + "</th><th>" + t("scanColClass") + "</th><th>" + t("scanColName") + "</th><th>" + t("scanColBW") + "</th></tr>";
+      table.appendChild(thead);
+      var tbody = el("tbody");
+
+      visibleRows.forEach(function(r){
+        var tr = el("tr");
+
+        var tdChk = el("td");
+        var chk = el("input");
+        chk.type = "checkbox";
+        chk.checked = r.include;
+        chk.onchange = function(e){ r.include = e.target.checked; };
+        tdChk.appendChild(chk);
+        tr.appendChild(tdChk);
+
+        var tdCls = el("td");
+        var clsInput = el("input"); clsInput.type = "text"; clsInput.value = r.cls; clsInput.style.width = "52px";
+        clsInput.oninput = function(e){ r.cls = e.target.value; };
+        tdCls.appendChild(clsInput);
+        tr.appendChild(tdCls);
+
+        var tdName = el("td");
+        var nameInput = el("input"); nameInput.type = "text"; nameInput.value = r.name; nameInput.style.width = "100%";
+        nameInput.oninput = function(e){ r.name = e.target.value; };
+        tdName.appendChild(nameInput);
+        tr.appendChild(tdName);
+
+        var tdBw = el("td");
+        var bwInput = el("input"); bwInput.type = "text"; bwInput.value = r.bw; bwInput.style.width = "56px";
+        bwInput.oninput = function(e){ r.bw = e.target.value; };
+        tdBw.appendChild(bwInput);
+        tr.appendChild(tdBw);
+
+        tbody.appendChild(tr);
+      });
+
+      table.appendChild(tbody);
+      tableWrap.appendChild(table);
+      wrap.appendChild(tableWrap);
+    }
+
+    var actionRow = el("div", "row");
+    actionRow.style.marginTop = "12px";
+
+    var registerBtn = el("button", "btn btn-primary btn-block", escapeHtml(t("scanRegisterBtn")));
+    registerBtn.onclick = function(){
+      var added = 0;
+      scanState.rows.forEach(function(r){
+        if (!r.include) return;
+        var filter = scanState.classFilter.trim();
+        if (filter && (r.cls || "").indexOf(filter) === -1) return;
+        var a = newAthlete(r.name || "");
+        a.bodyweight = (r.bw || "").replace(/[^0-9.]/g, "");
+        state.athletes.push(a);
+        added++;
+      });
+      closeScanModal();
+      render();
+    };
+    wrap.appendChild(registerBtn);
+
+    var retakeBtn = el("button", "btn btn-block", escapeHtml(t("scanRetakeBtn")));
+    retakeBtn.style.marginTop = "8px";
+    retakeBtn.onclick = function(){
+      scanState.step = "capture";
+      renderScanModal();
+    };
+    wrap.appendChild(retakeBtn);
+
+    var cancelBtn = el("button", "btn btn-block", escapeHtml(t("scanCancelBtn")));
+    cancelBtn.style.marginTop = "8px";
+    cancelBtn.onclick = function(){ closeScanModal(); };
+    wrap.appendChild(cancelBtn);
+
+    return wrap;
+  }
+
+  // 選択範囲を切り出し、OCR精度向上のため拡大してから返す
+  function cropAndUpscale(photoDataUrl, rectNatural, cb){
+    var img = new Image();
+    img.onload = function(){
+      var w = Math.max(1, rectNatural.w), h = Math.max(1, rectNatural.h);
+      var maxOutWidth = 1500;
+      var scale = Math.min(4, maxOutWidth / w);
+      if (scale < 1) scale = 1;
+      var outW = Math.round(w * scale), outH = Math.round(h * scale);
+      var canvas = document.createElement("canvas");
+      canvas.width = outW; canvas.height = outH;
+      var ctx = canvas.getContext("2d");
+      ctx.drawImage(img, rectNatural.x, rectNatural.y, w, h, 0, 0, outW, outH);
+      cb(canvas.toDataURL("image/jpeg", 0.92));
+    };
+    img.onerror = function(){ cb(photoDataUrl); };
+    img.src = photoDataUrl;
+  }
+
+  function loadTesseract(cb, errCb){
+    if (window.Tesseract){ cb(); return; }
+    if (window.__tesseractLoading){
+      window.__tesseractLoading.push({ ok: cb, err: errCb });
+      return;
+    }
+    window.__tesseractLoading = [{ ok: cb, err: errCb }];
+    var s = document.createElement("script");
+    s.src = "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js";
+    s.onload = function(){
+      var waiters = window.__tesseractLoading || [];
+      window.__tesseractLoading = null;
+      waiters.forEach(function(w){ w.ok(); });
+    };
+    s.onerror = function(){
+      var waiters = window.__tesseractLoading || [];
+      window.__tesseractLoading = null;
+      waiters.forEach(function(w){ w.err(); });
+    };
+    document.head.appendChild(s);
+  }
+
+  // アプリ起動時に裏でOCRライブラリの読み込みを先に始めておく(スキャン時の待ち時間を減らす)
+  function preloadTesseract(){
+    loadTesseract(function(){}, function(){});
+  }
+
+  function runOcr(imageDataUrl){
+    loadTesseract(function(){
+      Tesseract.recognize(imageDataUrl, "jpn+eng", {
+        logger: function(){}
+      }).then(function(result){
+        var data = result && result.data ? result.data : {};
+        var rows = parseOcrByColumns(data);
+        if (!rows || rows.length === 0){
+          rows = parseOcrText(data.text || "");
+        }
+        scanState.rows = rows;
+        scanState.step = "review";
+        renderScanModal();
+      }).catch(function(){
+        scanState.errorMsg = t("scanFailed");
+        scanState.step = "crop";
+        renderScanModal();
+      });
+    }, function(){
+      scanState.errorMsg = t("scanFailed");
+      scanState.step = "crop";
+      renderScanModal();
+    });
+  }
+
+  // Tesseractの行・単語の座標データから、見出し「Name」「検量体重」「IPF/Cls」を基準に
+  // 列の位置を推定し、各行から該当列のテキストだけを抽出する
+  function parseOcrByColumns(data){
+    var lines = extractLinesWithWords(data);
+    if (!lines || lines.length === 0) return null;
+
+    var headerLineIdx = -1;
+    for (var i = 0; i < lines.length; i++){
+      var words = lines[i].words || [];
+      for (var j = 0; j < words.length; j++){
+        if (/^name$/i.test(words[j].text.replace(/[^a-zA-Z]/g, ""))){
+          headerLineIdx = i;
+          break;
+        }
+      }
+      if (headerLineIdx >= 0) break;
+    }
+    if (headerLineIdx < 0) return null;
+
+    var headerWords = (lines[headerLineIdx].words || []).slice().sort(function(a,b){
+      return a.bbox.x0 - b.bbox.x0;
+    });
+    if (headerWords.length < 2) return null;
+
+    var centers = headerWords.map(function(w){ return (w.bbox.x0 + w.bbox.x1) / 2; });
+    var bounds = [-Infinity];
+    for (var k = 0; k < centers.length - 1; k++){
+      bounds.push((centers[k] + centers[k+1]) / 2);
+    }
+    bounds.push(Infinity);
+
+    var nameIdx = -1, bwIdx = -1, clsIdx = -1;
+    headerWords.forEach(function(w, idx){
+      var raw = w.text;
+      if (/name/i.test(raw)) nameIdx = idx;
+      else if (/検量|体重/.test(raw)) bwIdx = idx;
+      else if (/ipf|cls|wt/i.test(raw)) { if (clsIdx < 0) clsIdx = idx; }
+    });
+    if (nameIdx < 0) return null;
+
+    function colRangeFor(idx){ return { lo: bounds[idx], hi: bounds[idx+1] }; }
+    var nameRange = colRangeFor(nameIdx);
+    var bwRange = bwIdx >= 0 ? colRangeFor(bwIdx) : null;
+    var clsRange = clsIdx >= 0 ? colRangeFor(clsIdx) : null;
+
+    var rows = [];
+    for (var li = headerLineIdx + 1; li < lines.length; li++){
+      var lw = lines[li].words || [];
+      if (lw.length === 0) continue;
+
+      var nameText = "", bwText = "", clsText = "";
+      lw.forEach(function(w){
+        var cx = (w.bbox.x0 + w.bbox.x1) / 2;
+        if (cx >= nameRange.lo && cx < nameRange.hi){
+          nameText += (nameText ? " " : "") + w.text;
+        } else if (bwRange && cx >= bwRange.lo && cx < bwRange.hi){
+          bwText += w.text;
+        } else if (clsRange && cx >= clsRange.lo && cx < clsRange.hi){
+          clsText += w.text;
+        }
+      });
+
+      nameText = nameText.replace(/[^\p{L}\p{N}ー\s]/gu, " ").replace(/\s+/g, " ").trim();
+      var bwNum = (bwText.match(/\d+(\.\d+)?/) || [])[0] || "";
+      var clsNum = (clsText.match(/\d+(\.\d+)?\+?/) || [])[0] || "";
+
+      if (!nameText || nameText.length < 2) continue;
+      if (/^[0-9.\s]+$/.test(nameText)) continue;
+
+      rows.push({ cls: clsNum, name: nameText, bw: bwNum, include: true });
+    }
+    return rows;
+  }
+
+  // Tesseract.jsの戻り値の形(バージョン差異)を吸収して、行ごとの単語配列を取り出す
+  function extractLinesWithWords(data){
+    if (data.lines && data.lines.length && data.lines[0].words){
+      return data.lines;
+    }
+    if (data.blocks && data.blocks.length){
+      var out = [];
+      data.blocks.forEach(function(block){
+        (block.paragraphs || []).forEach(function(para){
+          (para.lines || []).forEach(function(line){ out.push(line); });
+        });
+      });
+      if (out.length) return out;
+    }
+    return null;
+  }
+
+  // 座標情報が使えない場合の簡易フォールバック(行テキストから名前・数値候補を抽出)
+  function parseOcrText(text){
+    var lines = text.split(/\r?\n/);
+    var rows = [];
+    lines.forEach(function(line){
+      var clean = line.replace(/\s+/g, " ").trim();
+      if (clean.length < 2) return;
+
+      var numMatches = clean.match(/\d+(\.\d+)?/g) || [];
+      var nameOnly = clean;
+      numMatches.forEach(function(n){ nameOnly = nameOnly.replace(n, " "); });
+      nameOnly = nameOnly.replace(/[^\p{L}\p{N}ー\s]/gu, " ").replace(/\s+/g, " ").trim();
+      if (!nameOnly) return;
+
+      var cls = "", bw = "";
+      if (numMatches.length >= 2){
+        cls = numMatches[0];
+        bw = numMatches[numMatches.length - 1];
+      } else if (numMatches.length === 1){
+        bw = numMatches[0];
+      }
+      rows.push({ cls: cls, name: nameOnly, bw: bw, include: true });
+    });
+    return rows;
+  }
+
+  // ---------- init ----------
+  var langEnRadio = document.getElementById("splash-lang-en");
+  var langJaRadio = document.getElementById("splash-lang-ja");
+  if (langEnRadio && langEnRadio.checked) state.lang = "en";
+  if (langEnRadio){
+    langEnRadio.addEventListener("change", function(){ if (this.checked){ state.lang = "en"; render(); } });
+  }
+  if (langJaRadio){
+    langJaRadio.addEventListener("change", function(){ if (this.checked){ state.lang = "ja"; render(); } });
+  }
+
+  render();
+  preloadTesseract();
+})();
+</script>
+</body>
+</html>
